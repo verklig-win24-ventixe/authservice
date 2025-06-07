@@ -1,0 +1,57 @@
+# Build Folders
+Build/
+bin/
+obj/
+
+# VS Code settings
+.vscode/
+
+# Visual Studio folders
+.vs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+packages/
+*.snupkg
+
+# Logs
+*.log
+
+# Auto-generated files
+*.generated.cs
+
+# IDE specific files
+.idea/
+*.ide.workspace
+
+# DotNet restore artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Database Configurations
+appsettings.json
+
+# Properties
+Properties/
+launchSettings.json
+appsettings.Development.json
+appsettings.json
+
+# Docker configuration
+docker-compose.yml
+
+# Other temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Uploaded files
+WebApp/wwwroot/uploads
