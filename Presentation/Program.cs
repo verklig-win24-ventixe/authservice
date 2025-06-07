@@ -9,7 +9,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
-  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+  options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection"))
 );
 
 builder.Services.AddIdentity<UserEntity, IdentityRole>()
