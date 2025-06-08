@@ -19,7 +19,7 @@ builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCre
 
 var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
 KeyVaultSecret dbSecret = await client.GetSecretAsync("DbConnectionString-Ventixe");
-KeyVaultSecret jwtKeySecret = await client.GetSecretAsync("JwtPublicKey");
+KeyVaultSecret jwtKeySecret = await client.GetSecretAsync("JwtPrivateKey");
 
 builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(dbSecret.Value));
 
