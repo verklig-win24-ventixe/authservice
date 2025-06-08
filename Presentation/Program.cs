@@ -7,18 +7,25 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOpenApi();
+builder.Services.AddControllers();
+builder.Services.AddAuthorization();
+builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AuthDbContext>(options =>
-  options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection"))
-);
+builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
 
 builder.Services.AddIdentity<UserEntity, IdentityRole>()
   .AddEntityFrameworkStores<AuthDbContext>()
   .AddDefaultTokenProviders();
 
-var jwtKey = builder.Configuration["jwtKey:Key"];
-var jwtIssuer = builder.Configuration["jwtKey:Issuer"];
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+  options.Password.RequireNonAlphanumeric = false;
+  options.Password.RequiredLength = 8;
+});
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -37,12 +44,30 @@ builder.Services.AddAuthentication(options =>
   };
 });
 
-builder.Services.AddAuthorization();
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
+
+using var scope = app.Services.CreateScope();
+var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+string[] roles = ["User"];
+
+foreach (var role in roles)
+{
+  if (!await roleManager.RoleExistsAsync(role))
+  {
+    await roleManager.CreateAsync(new IdentityRole(role));
+  }
+}
+
 app.MapOpenApi();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+  c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth Service API");
+  c.RoutePrefix = string.Empty;
+});
+app.UseHttpsRedirection();
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHttpsRedirection();
+app.MapControllers();
 app.Run();
