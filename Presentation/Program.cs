@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Presentation.Data.Contexts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
@@ -12,17 +14,21 @@ builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
+var keyVaultUrl = "https://verklig-ventixe-keyvault.vault.azure.net/";
+builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
 
-builder.Services.AddIdentity<UserEntity, IdentityRole>()
-  .AddEntityFrameworkStores<AuthDbContext>()
-  .AddDefaultTokenProviders();
+var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
+KeyVaultSecret dbSecret = await client.GetSecretAsync("DbConnectionString-Ventixe");
+KeyVaultSecret jwtKeySecret = await client.GetSecretAsync("JwtPublicKey");
 
-builder.Services.Configure<IdentityOptions>(options =>
-{
-  options.Password.RequireNonAlphanumeric = false;
-  options.Password.RequiredLength = 8;
-});
+builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(dbSecret.Value));
+
+var rsa = RSA.Create();
+rsa.ImportFromPem(jwtKeySecret.Value.ToCharArray());
+
+var issuer = builder.Configuration["JwtIssuer"];
+var audience = builder.Configuration["JwtAudience"];
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
   options.TokenValidationParameters = new TokenValidationParameters
@@ -31,10 +37,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     ValidateAudience = true,
     ValidateLifetime = true,
     ValidateIssuerSigningKey = true,
-    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-    ValidAudience = builder.Configuration["Jwt:Issuer"],
-    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    ValidIssuer = issuer,
+    ValidAudience = audience,
+    IssuerSigningKey = new RsaSecurityKey(rsa)
   };
+});
+
+builder.Services.AddIdentity<UserEntity, IdentityRole>().AddEntityFrameworkStores<AuthDbContext>().AddDefaultTokenProviders();
+builder.Services.Configure<IdentityOptions>(options =>
+{
+  options.Password.RequireNonAlphanumeric = false;
+  options.Password.RequiredLength = 8;
 });
 
 var app = builder.Build();
