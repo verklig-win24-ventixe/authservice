@@ -24,7 +24,7 @@ KeyVaultSecret jwtKeySecret = await client.GetSecretAsync("JwtPrivateKey");
 builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(dbSecret.Value));
 
 var rsa = RSA.Create();
-rsa.ImportFromPem(jwtKeySecret.Value.ToCharArray());
+rsa.ImportFromPem(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(jwtKeySecret.Value)));
 
 var issuer = builder.Configuration["JwtIssuer"];
 var audience = builder.Configuration["JwtAudience"];
