@@ -2,17 +2,17 @@ using Presentation.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Presentation.Domain.Dtos;
-using Presentation.Services;
+using Presentation.Interfaces;
 
 namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, TokenGenerationService tokenGenerationService) : ControllerBase
+public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, ITokenGenerationService tokenGenerationService) : ControllerBase
 {
   private readonly UserManager<UserEntity> _userManager = userManager;
   private readonly SignInManager<UserEntity> _signInManager = signInManager;
-  private readonly TokenGenerationService _tokenGenerationService = tokenGenerationService;
+  private readonly ITokenGenerationService _tokenGenerationService = tokenGenerationService;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register(SignUpFormData form)
