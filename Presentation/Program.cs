@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using System.Security.Cryptography;
+using Presentation.Interfaces;
+using Presentation.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
@@ -26,6 +28,7 @@ builder.Services.AddDbContext<AuthDbContext>(x => x.UseSqlServer(dbSecret.Value)
 var rsa = RSA.Create();
 rsa.ImportFromPem(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(jwtKeySecret.Value)));
 
+var signingKey = new RsaSecurityKey(rsa);
 var issuer = builder.Configuration["JwtIssuer"];
 var audience = builder.Configuration["JwtAudience"];
 
@@ -39,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     ValidateIssuerSigningKey = true,
     ValidIssuer = issuer,
     ValidAudience = audience,
-    IssuerSigningKey = new RsaSecurityKey(rsa)
+    IssuerSigningKey = signingKey
   };
 });
 
@@ -49,6 +52,8 @@ builder.Services.Configure<IdentityOptions>(options =>
   options.Password.RequireNonAlphanumeric = false;
   options.Password.RequiredLength = 8;
 });
+
+builder.Services.AddSingleton<ITokenGenerationService>(new TokenGenerationService(signingKey, issuer!, audience!));
 
 var app = builder.Build();
 
