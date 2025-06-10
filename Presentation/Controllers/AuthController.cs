@@ -35,7 +35,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     var result = await _userManager.CreateAsync(userEntity, form.Password);
     if (!result.Succeeded)
     {
-      return BadRequest(new { message = result.Errors });
+      return BadRequest(new { message = "Either credentials are invalid or the account already exists." });
     }
 
     await _userManager.AddToRoleAsync(userEntity, "User");
