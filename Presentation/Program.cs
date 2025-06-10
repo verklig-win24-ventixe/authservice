@@ -9,6 +9,7 @@ using Azure.Security.KeyVault.Secrets;
 using System.Security.Cryptography;
 using Presentation.Interfaces;
 using Presentation.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
@@ -54,6 +55,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 builder.Services.AddSingleton<ITokenGenerationService>(new TokenGenerationService(signingKey, issuerSecret.Value, audienceSecret.Value));
+builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
 
 var app = builder.Build();
 
