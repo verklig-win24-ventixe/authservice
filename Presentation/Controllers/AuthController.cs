@@ -20,7 +20,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
   {
     if (form.Password != form.ConfirmPassword)
     {
-      return BadRequest("Passwords do not match.");
+      return BadRequest(new { message = "Passwords do not match." });
     }
 
     var splitName = form.FullName.Split(" ", 2);
@@ -35,7 +35,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     var result = await _userManager.CreateAsync(userEntity, form.Password);
     if (!result.Succeeded)
     {
-      return BadRequest(result.Errors);
+      return BadRequest(new { message = result.Errors });
     }
 
     await _userManager.AddToRoleAsync(userEntity, "User");
@@ -49,7 +49,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
 
     await _emailSenderService.SendEmailAsync(userEntity.Email, "Confirm your email", htmlMessage);
 
-    return Ok("User registered successfully. Please check your email to verify your account.");
+    return Ok(new { message = "User registered successfully. Please check your email to verify your account." });
   }
 
   [HttpPost("login")]
@@ -58,18 +58,18 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     var user = await _userManager.FindByEmailAsync(form.Email);
     if (user == null)
     {
-      return Unauthorized("Either the email or password is wrong.");
+      return Unauthorized(new { message = "Either the email or password is wrong." });
     }
 
     if (!user.EmailConfirmed)
     {
-      return Unauthorized("The email was not confirmed, check your inbox and confirm it before logging in.");
+      return Unauthorized(new { message = "The email was not confirmed, check your inbox and confirm it before logging in." });
     }
 
     var result = await _signInManager.CheckPasswordSignInAsync(user, form.Password, false);
     if (!result.Succeeded)
     {
-      return Unauthorized("Either the email or password is wrong.");
+      return Unauthorized(new { message = "Either the email or password is wrong." });
     }
 
     var roles = await _userManager.GetRolesAsync(user);
@@ -83,20 +83,20 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
   {
     if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(emailToken))
     {
-      return BadRequest("Invalid confirmation link.");
+      return BadRequest(new { message = "Invalid confirmation link." });
     }
 
     var user = await _userManager.FindByIdAsync(userId);
     if (user == null)
     {
-      return NotFound("User was not found.");
+      return NotFound(new { message = "User was not found." });
     }
 
     var decodedToken = System.Web.HttpUtility.UrlDecode(emailToken);
     var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
 
     return result.Succeeded
-      ? Ok("The email was confirmed successfully, you can now log in.")
-      : BadRequest("The email confirmation failed.");
+      ? Ok(new { message = "The email was confirmed successfully, you can now log in." })
+      : BadRequest(new { message = "The email confirmation failed." });
   }
 }
