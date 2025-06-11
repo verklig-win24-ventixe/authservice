@@ -8,12 +8,11 @@ namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, ITokenGenerationService tokenGenerationService, IEmailSenderService emailSenderService) : ControllerBase
+public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, ITokenGenerationService tokenGenerationService) : ControllerBase
 {
   private readonly UserManager<UserEntity> _userManager = userManager;
   private readonly SignInManager<UserEntity> _signInManager = signInManager;
   private readonly ITokenGenerationService _tokenGenerationService = tokenGenerationService;
-  private readonly IEmailSenderService _emailSenderService = emailSenderService;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register(SignUpFormData form)
@@ -39,15 +38,8 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     }
 
     await _userManager.AddToRoleAsync(userEntity, "User");
-
-    var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(userEntity);
-    var encodedEmailToken = System.Web.HttpUtility.UrlEncode(emailToken);
-    var confirmationLink = Url.Action(nameof(ConfirmEmail), "Auth", new { userId = userEntity.Id, emailToken = encodedEmailToken }, Request.Scheme);
-
-    var htmlMessage = $"<p>Hello {userEntity.FirstName},</p>" +
-                      $"<p>Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.</p>";
-
-    await _emailSenderService.SendEmailAsync(userEntity.Email, "Confirm your email", htmlMessage);
+    
+    // TODO: Send confirmation email
 
     return Ok(new { message = "User registered successfully. Please check your email to verify your account." });
   }
@@ -61,10 +53,10 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
       return Unauthorized(new { message = "Either the email or password is wrong." });
     }
 
-    if (!user.EmailConfirmed)
+    /* if (!user.EmailConfirmed)
     {
       return Unauthorized(new { message = "The email was not confirmed, check your inbox and confirm it before logging in." });
-    }
+    } */
 
     var result = await _signInManager.CheckPasswordSignInAsync(user, form.Password, false);
     if (!result.Succeeded)
