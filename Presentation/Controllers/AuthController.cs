@@ -41,12 +41,13 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     await _userManager.AddToRoleAsync(userEntity, "User");
     
     var token = await _userManager.GenerateEmailConfirmationTokenAsync(userEntity);
+    var encodedToken = Uri.EscapeDataString(token);
     var client = _httpClientFactory.CreateClient();
     var request = new
     {
       Email = userEntity.Email,
       UserId = userEntity.Id,
-      EmailToken = token
+      EmailToken = encodedToken
     };
 
     var response = await client.PostAsJsonAsync("https://verklig-ventixe-emailservice-g6gha3a4f9dfc4cd.swedencentral-01.azurewebsites.net/api/verification/send-verification-link", request);
