@@ -15,6 +15,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 
 var keyVaultUrl = "https://verklig-ventixe-keyvault.vault.azure.net/";
 builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());

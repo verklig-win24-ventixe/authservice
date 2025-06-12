@@ -8,11 +8,12 @@ namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, ITokenGenerationService tokenGenerationService) : ControllerBase
+public class AuthController(SignInManager<UserEntity> signInManager, UserManager<UserEntity> userManager, ITokenGenerationService tokenGenerationService, IHttpClientFactory httpClientFactory) : ControllerBase
 {
   private readonly UserManager<UserEntity> _userManager = userManager;
   private readonly SignInManager<UserEntity> _signInManager = signInManager;
   private readonly ITokenGenerationService _tokenGenerationService = tokenGenerationService;
+  private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register(SignUpFormData form)
@@ -39,7 +40,21 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
 
     await _userManager.AddToRoleAsync(userEntity, "User");
     
-    // TODO: Send confirmation email
+    var token = await _userManager.GenerateEmailConfirmationTokenAsync(userEntity);
+    var client = _httpClientFactory.CreateClient();
+    var request = new
+    {
+      Email = userEntity.Email,
+      UserId = userEntity.Id,
+      EmailToken = token
+    };
+
+    var response = await client.PostAsJsonAsync("https://verklig-ventixe-emailservice-g6gha3a4f9dfc4cd.swedencentral-01.azurewebsites.net/api/verification/send-verification-link", request);
+    if (!response.IsSuccessStatusCode)
+    {
+      await _userManager.DeleteAsync(userEntity);
+      return StatusCode(500, new { message = "Failed to send verification email, please try again later." });
+    }
 
     return Ok(new { message = "User registered successfully. Please check your email to verify your account." });
   }
@@ -53,10 +68,10 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
       return Unauthorized(new { message = "Either the email or password is wrong." });
     }
 
-    /* if (!user.EmailConfirmed)
+    if (!user.EmailConfirmed)
     {
       return Unauthorized(new { message = "The email was not confirmed, check your inbox and confirm it before logging in." });
-    } */
+    }
 
     var result = await _signInManager.CheckPasswordSignInAsync(user, form.Password, false);
     if (!result.Succeeded)
