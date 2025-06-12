@@ -57,7 +57,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
       return StatusCode(500, new { message = $"Failed to send verification email. {response.ToString()}" });
     }
 
-    return Ok(new { message = "User registered successfully. Please check your email to verify your account." });
+    return Ok(new { message = "User registered successfully, please check your email to verify your account." });
   }
 
   [HttpPost("login")]
