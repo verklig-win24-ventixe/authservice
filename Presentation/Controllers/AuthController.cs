@@ -53,7 +53,7 @@ public class AuthController(SignInManager<UserEntity> signInManager, UserManager
     if (!response.IsSuccessStatusCode)
     {
       await _userManager.DeleteAsync(userEntity);
-      return StatusCode(500, new { message = "Failed to send verification email.", error = response.ToString() });
+      return StatusCode(500, new { message = $"Failed to send verification email. {response.ToString()}" });
     }
 
     return Ok(new { message = "User registered successfully. Please check your email to verify your account." });
